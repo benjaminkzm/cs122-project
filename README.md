@@ -4,7 +4,7 @@ Authors: Benjamin Khor and Sharon Le
 
 # Project Description
 
-This project leverages the Steam API to analyze key aspects of gaming trends. It tracks player count trends for popular games, monitors price fluctuations to alert users about discounts, and provides insights into multiplayer matchmaking wait times and peak hours. This platform will present interactive visualizations and real-time data analysis to help gamers make informed decisions.
+This project leverages the Steam API to analyze key aspects of gaming trends. It tracks player count trends for popular games, monitors price fluctuations to alert users about discounts. This platform will present interactive visualizations and real-time data analysis to help gamers make informed decisions.
 
 # Project Outline/Plan
 
@@ -12,11 +12,9 @@ Game Popularity and Trends – Fetch and visualize player count trends over time
 
 Price Tracker and Deal Finder – Monitor game prices, track historical trends, and alert users when discounts are available.
 
-Multiplayer Game Matchmaking Insights – Analyze matchmaking wait times, identify peak hours, and assess player distribution.
-
 # Interface Plan
 
-Web-based dashboard (Flask or Streamlit) with interactive visualizations.
+Web-based dashboard (Flask or Streamlit) or Desktop GUI (PyQt or Tkinter) with interactive visualizations.
 
 Users can select a game to view real-time and historical data.
 
