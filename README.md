@@ -1,6 +1,6 @@
 # Steam Data Insights
 
-Authors: Benjamin Khor and (Author #2)
+Authors: Benjamin Khor and Sharon Le
 
 # Project Description
 
@@ -31,4 +31,14 @@ Store data in an SQLite or MongoDB database for historical tracking.
 Implement caching mechanisms to reduce API request limits.
 
 # Data Analysis and Visualization Plan (Author #2)
+
+Collected data will be processed and analyzed in categories such as pricing trend, popularity and multiplayer activity.
+
+Pricing can be analyzed through price changes over time, this can tell us an estimate of when we can expect the next sale to take place using line chart and heatmaps.
+
+Player count can be analyzed through player active tracking through out the day to see peak hours and interest for the game using line chart.
+
+Multiplayer activity can be estimated using player count as it provides insights to what time is most populated and when it is low, allowing users estimate their wait time in queue.
+
+
 
