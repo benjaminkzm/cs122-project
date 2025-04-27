@@ -31,8 +31,27 @@ def fetch_game_data(appid):
         'price': price
     }
 
+def fetch_all(appids):
+    """Fetch all games on the steam database and return APIDS and name."""
+    all_games_data = {}
+    url = "https://api.steampowered.com/ISteamApps/GetAppList/v2/"
+    response = requests.get(url)
+    if response.status_code == 200:
+        data = response.json()
+        app_list = data['applist']['apps']
+        return app_list
+    else:
+        raise Exception("Failed to fetch Steam Apps")
+
 #test
 appid = 1113000
 game_data = fetch_game_data(appid)
 print(game_data)
-
+count = 0
+all_games = fetch_all(appid)
+for app in all_games:
+    print(f"App ID: {app['appid']}, Name: {app['name'].encode('utf-8', 'ignore').decode('utf-8')}") # includes special characters
+    count += 1
+    
+print(f"Total number of games: {count}")
+    
