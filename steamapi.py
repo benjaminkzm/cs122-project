@@ -51,10 +51,10 @@ def fetch_game_data(appid):
         # Fetch video (trailers, etc.) if available
         videos = price_data.get('movies', [])
         video_urls = [video['webm']['max'] for video in videos if 'webm' in video]
-        screenshots = [s['path_full'] for s in price_data.get('screenshots', [])]
         
         # Images
         header_image = price_data.get('header_image')
+        screenshots = [s['path_full'] for s in price_data.get('screenshots', [])]
 
         return {
             'appid': appid,
@@ -78,8 +78,36 @@ def clean(raw_desc):
     soup = bs(raw_desc, 'html.parser')
     return soup.get_text(separator=' ', strip=True)
 
+def fetch_overall_reviews(appid):
+    """Fetch overall reviews from Steam using SteamSpy API, Web 
+    scraping requires alot of time if reviews are large and there
+    is request limits. Also it may be against TOS"""
+    url = f"https://steamspy.com/api.php?request=appdetails&appid={appid}"
+    response = requests.get(url)
+    if response.status_code == 200:
+        data = response.json()
+        
+        # Extracting review data
+        positives = data.get('positive', 0)
+        negatives = data.get('negative', 0)
+        positive_percentage = 0
+        
+        if positives and negatives:
+            total_reviews = positives + negatives
+            positive_percentage = (positives / total_reviews) * 100 if total_reviews > 0 else 0
+            
+            print(f"Game {appid} has {positives} positive reviews out of {total_reviews} total reviews.")
+            print(f"Overall Review Percentage: {positive_percentage:.2f}%")
+        else:
+            print(f"No review data available for appid {appid}")
+            
+        return positive_percentage
+    else:
+        print(f"Failed to fetch review data for appid {appid}, Status code: {response.status_code}")
+
+
 # Tester
-game = fetch_game_data(440)  # Example usage
+game = fetch_game_data(2767030)  # Example usage
 print(game['name'])  # Print the fetched game data
 print(game['player_count'])  # Print the fetched game data
 print(game['price'])  # Print the fetched game data
@@ -87,3 +115,6 @@ print(game['short_description'])  # Print the fetched game data
 print(game['detailed_description'])  # Print the fetched game data
 print(game['video_urls'])  # Print the fetched game data
 print(game['screenshots'])  # Print the fetched game data
+
+# Example for Dota 2 (appid: 570)
+reviews = fetch_overall_reviews(570)
