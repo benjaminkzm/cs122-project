@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, jsonify, make_response
-from steamapi import fetch_game_data, fetch_overall_reviews
+from steamapi import fetch_game_data, fetch_overall_reviews, fetch_all
 from google.cloud import firestore
 from datetime import datetime, timedelta
 import csv
@@ -14,11 +14,7 @@ except:
     db = None
 
 # Game AppIDs and names
-GAME_APPIDS = {
-    2767030: "Marvel Rivals",
-    570:     "Dota 2",
-    730:     "Counter-Strike 2"
-}
+GAME_APPIDS = fetch_all()
 
 # Build a name→appid lookup for text searches
 NAME_TO_APPID = {name.lower(): appid for appid, name in GAME_APPIDS.items()}

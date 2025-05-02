@@ -77,7 +77,27 @@ def clean(raw_desc):
     """Clean the raw description by removing HTML tags."""
     soup = bs(raw_desc, 'html.parser')
     return soup.get_text(separator=' ', strip=True)
-
+ 
+def fetch_all():
+    """Fetch all games on the Steam database and return AppIDs and names."""
+    all_games_data = {}
+    url = "https://api.steampowered.com/ISteamApps/GetAppList/v2/"
+    response = requests.get(url)
+    
+    if response.status_code == 200:
+        data = response.json()
+        app_list = data['applist']['apps']
+        
+        # Convert the list of dictionaries into a dictionary of AppID -> Game Name
+        for app in app_list:
+            appid = app['appid']
+            name = app['name']
+            all_games_data[appid] = name  # Map AppID to Game Name
+        
+        return all_games_data
+    else:
+        raise Exception("Failed to fetch Steam Apps")
+    
 def fetch_overall_reviews(appid):
     """Fetch overall reviews from Steam using SteamSpy API, Web 
     scraping requires alot of time if reviews are large and there
@@ -103,4 +123,4 @@ def fetch_overall_reviews(appid):
             
         return positive_percentage
     else:
-        print(f"Failed to fetch review data for appid {appid}, Status code: {response.status_code}")
+        print(f"Failed to fetch review data for appid {appid}, Status code: {response.status_code}") 
