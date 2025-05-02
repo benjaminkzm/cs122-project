@@ -1,10 +1,11 @@
 .navbar {
     display: flex;
-    justify-content: space-between;
+    /*justify-content: space-between;*/
     align-items: center;
     background-color: black;
     padding: 0 20px;
 }
+
 
 .navbar ul {
     list-style-type: none;
@@ -31,23 +32,27 @@
 /* Search bar inside navbar */
 .search-form {
     display: flex;
+    margin-left: auto;
+    margin-right: auto;
 }
 
-.search-form input[type="text"] {
+.searchbar {
     padding: 8px;
     border: none;
     border-radius: 4px 0 0 4px;
+    align-items: center;
+
 }
 
-.search-form button {
+.btn {
     padding: 8px 12px;
     border: none;
     background-color:rgb(73, 74, 75);
     color: white;
     border-radius: 0 4px 4px 0;
     cursor: pointer;
+    align-items: center;
 }
-
-.search-form button:hover {
+.btn:hover {
     background-color:rgb(87, 87, 87);
 }

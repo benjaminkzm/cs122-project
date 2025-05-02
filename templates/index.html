@@ -13,9 +13,9 @@
 
   <nav class="navbar">
     <a href="{{ url_for('index') }}">Home</a>
-    <form action="/search" method="GET">
-      <input type="text" name="query" placeholder="Enter Steam AppID" required>
-      <button type="submit">Search</button>
+    <form action="/search" method="GET" class="search-form">
+      <input type="text" name="query" placeholder="Enter Steam AppID" required class="searchbar">
+      <button type="submit" class="btn">Search</button>
     </form>
   </nav>
 
