@@ -9,108 +9,174 @@
 <body>
 
   <!-- SITE HEADER -->
-  <header class="site-header">
-    <h1>Steam Database</h1>
-    <p class="tagline">Real-time player counts and price info for your favorite Steam games</p>
-    {% if game_data %}
-    <form action="/search" method="GET" class="search-form" autocomplete="off">
-      <input type="text" name="query" placeholder="Enter AppID or Game Name" required class="searchbar" />
-      <button type="submit" class="btn">Search</button>
-    </form>
-    {% endif %}
+  <header class="site-header" style="
+    display: flex;
+    align-items: center;
+    padding: 1rem 2rem;
+    background: #222;
+    color: #fff;
+  ">
+    <div style="flex:1"></div>
+
+    <!-- title + tagline -->
+    <div style="flex:1; text-align:center;">
+      <h1 style="margin:0; font-size:1.5rem;">Steam Database</h1>
+      <p style="margin:0.25rem 0 0; font-weight:300;">
+        Real-time player counts and price info for your favorite Steam games
+      </p>
+    </div>
+
+    <div style="flex:1; display:flex; justify-content:flex-end;">
+      {% if game_data %}
+      <form action="/search" method="GET"
+            class="search-form" autocomplete="off"
+            style="display:flex; align-items:center;">
+        <input type="text" name="query"
+               placeholder="Enter AppID or Name"
+               required class="searchbar"
+               style="padding:0.5rem; border:none; border-radius:4px 0 0 4px; width:200px;" />
+        <button type="submit" class="btn"
+                style="padding:0.5rem 1rem; border-radius:0 4px 4px 0;">
+          Search
+        </button>
+      </form>
+      {% endif %}
+    </div>
   </header>
+
 
   <div class="container">
 
     {% if game_data %}
-      <!-- GAME DETAIL CARD -->
-      <section class="game-meta">
+    <!-- GAME DETAIL CARD -->
+    <section class="game-card">
+      <div class="game-card__header">
         {% if game_data.header_image %}
-          <figure class="header-figure">
-            <img src="{{ game_data.header_image }}" alt="{{ game_data.name }} header" class="header-img" />
-          </figure>
+          <img
+            src="{{ game_data.header_image }}"
+            alt="{{ game_data.name }} header"
+            class="game-card__img" />
         {% endif %}
-
-        <h2>{{ game_data.name }} <small>(AppID: {{ game_data.appid }})</small></h2>
-        <ul class="meta-list">
-          <li><strong>Players Now:</strong> {{ game_data.player_count }}</li>
-          <li><strong>Price:</strong>
-            {% if game_data.price == 0 %}
-              Free
-            {% else %}
-              ${{ "%.2f"|format(game_data.price) }}
-            {% endif %}
-          </li>
-          <li><strong>Reviews:</strong>
-            {% if game_data.review_pct is not none %}
-              {{ game_data.review_pct }}% positive
-            {% else %}
-              N/A
-            {% endif %}
-          </li>
-          {% if game_data.recommendations %}
-            <li><strong>Recommendations:</strong> {{ "{:,}".format(game_data.recommendations) }}</li>
-          {% endif %}
-        </ul>
-        <p class="center">
-          <a href="{{ url_for('history_game', appid=game_data.appid) }}" class="btn">View History</a>
-        </p>
-      </section>
-
-      <!-- DESCRIPTION -->
-      <section class="game-description">
-        <h3>Description</h3>
-        <p>{{ game_data.short_description }}</p>
-      </section>
-
-      <!-- MEDIA CAROUSELS -->
-      <div class="media-section">
-        {% if game_data.screenshots %}
-          <section class="carousel-section">
-            <h3>Screenshots</h3>
-            <div class="carousel" id="carousel" data-screenshots='{{ game_data.screenshots|tojson }}'>
-              <button id="prevBtn" class="btn">←</button>
-              <img id="carouselImage" src="{{ game_data.screenshots[0] }}" alt="Screenshot" style="max-width:700px; width:100%; border-radius:4px;" />
-              <button id="nextBtn" class="btn">→</button>
-            </div>
-          </section>
-        {% endif %}
-
-        {% if game_data.video_urls %}
-          <section class="carousel-section">
-            <h3>Trailers</h3>
-            <div class="carousel" id="videoCarousel" data-items='{{ game_data.video_urls|tojson }}'>
-              <button id="prevVideo" class="btn">←</button>
-              <video id="carouselVideo" controls preload="metadata" style="max-width:700px; width:100%; border-radius:4px;">
-                <source src="{{ game_data.video_urls[0] }}" type="video/webm">
-                Your browser does not support HTML5 video.
-              </video>
-              <button id="nextVideo" class="btn">→</button>
-            </div>
-          </section>
-        {% endif %}
+    
+        <div class="game-card__info">
+          <h2 class="game-card__title">
+            {{ game_data.name }}
+            <span class="game-card__appid">(AppID: {{ game_data.appid }})</span>
+          </h2>
+          <a
+            href="{{ url_for('history_game', appid=game_data.appid) }}"
+            class="btn btn--primary btn--sm"
+          >
+            View Player Count History
+          </a>
+        </div>
       </div>
 
-      <script src="{{ url_for('static', filename='carousel.js') }}"></script>
-      <script src="{{ url_for('static', filename='trailer_carousel.js') }}"></script>
+      <ul class="game-card__stats">
+        <li>
+          <span class="stat-label">Online Players Now: </span>
+          <span class="stat-value">{{ game_data.player_count }}</span>
+        </li>
+        <li>
+          <span class="stat-label">Price: </span>
+          <span class="stat-value">
+            {% if game_data.price == 0 %}Free{% else %}${{ "%.2f"|format(game_data.price) }}{% endif %}
+          </span>
+        </li>
+        <li>
+          <span class="stat-label">Positive Reviews: </span>
+          <span class="stat-value">
+            {% if game_data.review_pct is not none %}
+              {{ game_data.review_pct }}%
+            {% else %}N/A{% endif %}
+          </span>
+        </li>
+        {% if game_data.recommendations %}
+        <li>
+          <span class="stat-label">Recommendations</span>
+          <span class="stat-value">
+            {{ "{:,}".format(game_data.recommendations) }}
+          </span>
+        </li>
+        {% endif %}
+      </ul>
+    </section>
+
+
+    <!-- DESCRIPTION -->
+    <section class="game-description">
+      <h3>Description</h3>
+      <p>{{ game_data.short_description }}</p>
+    </section>
+
+    <!-- MEDIA CAROUSELS -->
+    <div class="media-section">
+      {% if game_data.screenshots %}
+      <section class="carousel-section">
+        <h3>Screenshots</h3>
+        <div class="carousel"
+             id="carousel"
+             data-screenshots='{{ game_data.screenshots|tojson }}'>
+          <button id="prevBtn" class="btn">←</button>
+          <img id="carouselImage"
+               src="{{ game_data.screenshots[0] }}"
+               alt="Screenshot"
+               style="max-width:700px; width:100%; border-radius:4px;" />
+          <button id="nextBtn" class="btn">→</button>
+        </div>
+      </section>
+      {% endif %}
+
+      {% if game_data.video_urls %}
+      <section class="carousel-section">
+        <h3>Trailers</h3>
+        <div class="carousel"
+             id="videoCarousel"
+             data-items='{{ game_data.video_urls|tojson }}'>
+          <button id="prevVideo" class="btn">←</button>
+          <video id="carouselVideo"
+                 controls preload="metadata"
+                 style="max-width:700px; width:100%; border-radius:4px;">
+            <source src="{{ game_data.video_urls[0] }}"
+                    type="video/webm">
+            Your browser does not support HTML5 video.
+          </video>
+          <button id="nextVideo" class="btn">→</button>
+        </div>
+      </section>
+      {% endif %}
+    </div>
+
+    <script src="{{ url_for('static', filename='carousel.js') }}"></script>
+    <script src="{{ url_for('static', filename='trailer_carousel.js') }}"></script>
 
     {% else %}
-      <!-- WELCOME CARD + CENTERED SEARCH -->
-      <section class="welcome-card">
-        <h2>Welcome!</h2>
-        <p>Use the search box below to look up a Steam title by AppID or name.</p>
-        <form action="/search" method="GET" class="search-form welcome-search" autocomplete="off" style="display:flex; justify-content:center; margin:1rem auto; align-items:center;">
-          <input type="text" name="query" placeholder="Enter AppID or Game Name" required class="searchbar" style="flex:0 0 300px; margin-right:0.5rem;" />
-          <button type="submit" class="btn">Search</button>
-        </form>
-      </section>
+    <!-- WELCOME CARD + CENTERED SEARCH -->
+    <section class="welcome-card">
+      <h2>Welcome!</h2>
+      <p>Use the search box below to look up a Steam title by AppID or name.</p>
+      <form action="/search" method="GET"
+            class="search-form welcome-search"
+            autocomplete="off"
+            style="display:flex; justify-content:center; margin:1rem auto; align-items:center;">
+        <input type="text" name="query"
+               placeholder="Enter AppID or Game Name"
+               required class="searchbar"
+               style="flex:0 0 300px; margin-right:0.5rem;" />
+        <button type="submit" class="btn">Search</button>
+      </form>
+    </section>
     {% endif %}
 
   </div><!-- /.container -->
 
-  <!-- FOOTER -->
+
+  <!-- Footer-->
   <footer class="site-footer">
-    <p>CS122 Project &middot; <a href="https://github.com/benjaminkzm/cs122-project" target="_blank">View on GitHub</a></p>
+    <p>CS122 Project &middot;
+      <a href="https://github.com/benjaminkzm/cs122-project"
+         target="_blank">View on GitHub</a>
+    </p>
   </footer>
 
 </body>

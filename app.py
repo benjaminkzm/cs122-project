@@ -1,7 +1,9 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, make_response
 from steamapi import fetch_game_data, fetch_overall_reviews
 from google.cloud import firestore
 from datetime import datetime, timedelta
+import csv
+from io import StringIO
 
 app = Flask(__name__)
 
@@ -21,12 +23,9 @@ GAME_APPIDS = {
 # Build a name→appid lookup for text searches
 NAME_TO_APPID = {name.lower(): appid for appid, name in GAME_APPIDS.items()}
 
-
 @app.route('/')
 def index():
-    # Renders your search page
     return render_template('index.html', game_data=None)
-
 
 @app.route('/search')
 def search():
@@ -53,7 +52,6 @@ def search():
 
     return render_template('index.html', game_data=game_data)
 
-
 @app.route('/history/<int:appid>')
 def history_game(appid):
     if db is None:
@@ -74,7 +72,6 @@ def history_game(appid):
         default_start=default_start,
         default_end=default_end
     )
-
 
 @app.route('/api/history/<int:appid>')
 def api_history(appid):
@@ -109,6 +106,43 @@ def api_history(appid):
         })
     return jsonify(data)
 
+@app.route('/export/history/<int:appid>')
+def export_history(appid):
+    start_str = request.args.get('start')
+    end_str   = request.args.get('end')
+    try:
+        start_dt = datetime.fromisoformat(start_str)
+        end_dt   = datetime.fromisoformat(end_str) + timedelta(days=1)
+    except Exception:
+        return "Invalid date format", 400
+
+    # 1) Query only on timestamp (no appid filter)
+    docs = (
+        db.collection('player_counts')
+          .where('timestamp', '>=', start_dt)
+          .where('timestamp', '<',  end_dt)
+          .order_by('timestamp')
+          .stream()
+    )
+
+    # 2) Build CSV in memory
+    buf = StringIO()
+    writer = csv.writer(buf)
+    writer.writerow(['timestamp','player_count'])
+    for doc in docs:
+        d = doc.to_dict()
+        # 3) Filter client-side
+        if d.get('appid') != appid:
+            continue
+        writer.writerow([d['timestamp'].isoformat(), d['player_count']])
+
+    # 4) Return as a downloadable CSV
+    resp = make_response(buf.getvalue())
+    resp.headers['Content-Type'] = 'text/csv'
+    resp.headers['Content-Disposition'] = (
+        f'attachment; filename=history_{appid}_{start_str}_to_{end_str}.csv'
+    )
+    return resp
 
 if __name__ == '__main__':
     app.run(debug=True)

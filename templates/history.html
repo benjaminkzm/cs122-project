@@ -11,15 +11,47 @@
 </head>
 <body>
 
-  <!-- SITE HEADER -->
-  <header class="site-header" style="text-align: center; background: #222; color: #fff; padding: 2em 0;">
-    <h1>{{ game_name }} History</h1>
-    <p class="tagline" style="margin-top: 0.5em; color: #ddd;">Track how player counts have changed over time</p>
-    <nav class="sub-nav" style="margin-top:1em;">
-      <a href="{{ url_for('index') }}" class="btn-small">← Back to Dashboard</a>
-    </nav>
-  </header>
+  <!-- Site Header -->
+  <header class="site-header" style="display:flex; align-items:center; padding:1rem 2rem; background:#222; color:#fff;">
+    <!-- left: Back link -->
+    <div style="flex:1; text-align:left;">
+      <a href="{{ url_for('search', query=appid) }}"
+     class="btn-small"
+     style="
+       position: absolute;
+       top: 1rem;
+       left: 1rem;
+       background: transparent;
+       color: #fff;
+       text-decoration: none;
+       font-size: 0.9em;
+     ">
+    ← Back to Game Data
+  </a>
+    </div>
+  
+    <!-- title + tagline -->
+    <div style="flex:1; text-align:center;">
+      <h1 style="margin:0; font-size:1.8rem;">{{ game_name }} History</h1>
+      <p class="tagline" style="margin:0.25rem 0 0; color:#ccc;">
+        Track how player counts have changed over time
+      </p>
+    </div>
 
+    <div style="flex:1; display:flex; justify-content:flex-end;">
+      <form action="/search" method="GET" class="search-form" autocomplete="off" style="display:flex; align-items:center;">
+        <input type="text" name="query"
+               placeholder="Enter AppID or Game Name"
+               required
+               class="searchbar"
+               style="padding:0.5rem; border-radius:4px 0 0 4px; border:none; width:200px;" />
+        <button type="submit" class="btn" style="padding:0.5rem 1rem; border-radius:0 4px 4px 0;">
+          Search
+        </button>
+      </form>
+    </div>
+  </header>  
+  
   <div class="container" style="max-width: 900px; margin: 2em auto; background: #f9f9f9; border-radius: 8px; padding: 2em; box-shadow: 0 2px 6px rgba(0,0,0,0.1);">
     <!-- Controls Panel -->
     <section class="controls" style="display: flex; flex-wrap: wrap; gap: 2em; align-items: flex-end; margin-bottom: 1.5em;">
@@ -45,7 +77,10 @@
           <select id="endHour" class="select hour-select" style="flex: 1; padding: 0.5em;"></select>
         </div>
       </div>
-      <button id="applyManual" class="btn" style="align-self: center; padding: 0.75em 1.5em;">Apply</button>
+      <div style="display:flex; gap:1em; align-items:center;">
+        <button id="applyManual" class="btn" style="padding:0.75em 1.5em;">Apply</button>
+        <button id="exportCsv" class="btn" style="padding:0.75em 1.5em;">Export CSV</button>
+      </div>
     </section>
 
     <!-- Stats Display -->
@@ -141,6 +176,22 @@
       loadRange(r);
     });
     document.getElementById('applyManual').addEventListener('click', ()=>loadRange(null));
+
+    // exportCsv handler:
+    document.getElementById('exportCsv').addEventListener('click', () => {
+      // grab the same values you use in loadRange()
+      const sd = document.getElementById('startDate').value;
+      const sh = document.getElementById('startHour').value;
+      const ed = document.getElementById('endDate').value;
+      const eh = document.getElementById('endHour').value;
+
+      // build ISO strings just like your loadRange() does
+      const startISO = encodeURIComponent(`${sd}T${sh}:00`);
+      const endISO   = encodeURIComponent(`${ed}T${eh}:00`);
+
+      // navigate to your new export route
+      window.location.href = `/export/history/${APPID}?start=${startISO}&end=${endISO}`;
+    });
 
     // Initialize
     window.addEventListener('load', ()=>{
