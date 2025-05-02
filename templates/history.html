@@ -3,144 +3,150 @@
 <head>
   <meta charset="utf-8">
   <title>{{ game_name }} – Player Count History</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
   <script src="https://cdn.jsdelivr.net/npm/luxon@3/build/global/luxon.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1"></script>
 </head>
 <body>
-  <header style="text-align: center; margin: 1.5em 0;">
-    <h1>{{ game_name }} – Player Count History</h1>
+
+  <!-- SITE HEADER -->
+  <header class="site-header" style="text-align: center; background: #222; color: #fff; padding: 2em 0;">
+    <h1>{{ game_name }} History</h1>
+    <p class="tagline" style="margin-top: 0.5em; color: #ddd;">Track how player counts have changed over time</p>
+    <nav class="sub-nav" style="margin-top:1em;">
+      <a href="{{ url_for('index') }}" class="btn-small">← Back to Dashboard</a>
+    </nav>
   </header>
 
-  <p style="text-align: center;"><a href="{{ url_for('index') }}">← Back to Search</a></p>
+  <div class="container" style="max-width: 900px; margin: 2em auto; background: #f9f9f9; border-radius: 8px; padding: 2em; box-shadow: 0 2px 6px rgba(0,0,0,0.1);">
+    <!-- Controls Panel -->
+    <section class="controls" style="display: flex; flex-wrap: wrap; gap: 2em; align-items: flex-end; margin-bottom: 1.5em;">
+      <div class="control-group" style="flex: 1; min-width: 180px;">
+        <label for="quickRange" style="font-weight: bold; display: block; margin-bottom: 0.5em;">Quick Range</label>
+        <select id="quickRange" class="select" style="width:100%; padding: 0.5em;">
+          <option value="1h">Last 1 Hour</option>
+          <option value="24h" selected>Last 24 Hours</option>
+          <option value="7d">Last 7 Days</option>
+        </select>
+      </div>
+      <div class="control-group" style="flex: 1; min-width: 180px;">
+        <label for="startDate" style="font-weight: bold; display: block; margin-bottom: 0.5em;">Start Date/Hour</label>
+        <div class="datetime-picker" style="display: flex; gap: 0.5em;">
+          <input type="date" id="startDate" class="input-date" style="flex: 2; padding: 0.5em;" />
+          <select id="startHour" class="select hour-select" style="flex: 1; padding: 0.5em;"></select>
+        </div>
+      </div>
+      <div class="control-group" style="flex: 1; min-width: 180px;">
+        <label for="endDate" style="font-weight: bold; display: block; margin-bottom: 0.5em;">End Date/Hour</label>
+        <div class="datetime-picker" style="display: flex; gap: 0.5em;">
+          <input type="date" id="endDate" class="input-date" style="flex: 2; padding: 0.5em;" />
+          <select id="endHour" class="select hour-select" style="flex: 1; padding: 0.5em;"></select>
+        </div>
+      </div>
+      <button id="applyManual" class="btn" style="align-self: center; padding: 0.75em 1.5em;">Apply</button>
+    </section>
 
-  <!-- Quick Range Selector -->
-  <div style="text-align: center; margin: 1em 0;">
-    <label>Quick Range:
-      <select id="quickRange">
-        <option value="1h">Last 1 Hour</option>
-        <option value="24h" selected>Last 24 Hours</option>
-        <option value="7d">Last 7 Days</option>
-      </select>
-    </label>
-  </div>
+    <!-- Stats Display -->
+    <section id="stats" class="stats" style="margin-bottom: 2em; font-size: 1.1em; color: #333;"></section>
 
-  <!-- Manual Date & Hour Picker -->
-  <div style="text-align: center; margin: 1em 0;">
-    <label>Start:
-      <input type="date" id="startDate">
-      <select id="startHour"></select>
-    </label>
-    <label style="margin-left: 1em;">End:
-      <input type="date" id="endDate">
-      <select id="endHour"></select>
-    </label>
-    <button id="applyManual" style="margin-left: 1em;">Apply</button>
-  </div>
+    <!-- Chart Canvas -->
+    <section class="chart-container" style="background: #fff; padding: 1em; border-radius: 6px;">
+      <canvas id="historyChart"></canvas>
+    </section>
+  </div><!-- /.container -->
 
-  <!-- Stats Display -->
-  <div id="stats" style="text-align: center; font-weight: bold; margin-bottom: 1em;"></div>
-
-  <!-- Chart Canvas -->
-  <div style="width: 90%; max-width: 800px; margin: auto;">
-    <canvas id="chart"></canvas>
-  </div>
+  <footer class="site-footer" style="text-align:center; padding:1em 0; color:#777;">
+    <p>&copy; 2025 Steam Database · <a href="https://github.com/benjaminkzm/cs122-project" target="_blank" style="color:#555;">GitHub</a></p>
+  </footer>
 
   <script>
     /* eslint-disable */
     const APPID = {{ appid }};
     const NOW   = luxon.DateTime.now();
+    const ctx   = document.getElementById('historyChart').getContext('2d');
 
-    // build Chart.js
-    const ctx = document.getElementById("chart").getContext("2d");
+    // Create Chart
     const chart = new Chart(ctx, {
-      type: "line",
-      data: {
-        datasets: [{
-          label: "{{ game_name }}",
-          data: []
-        }]
-      },
+      type: 'line',
+      data: { datasets: [{ label: '{{ game_name }}', data: [] }] },
       options: {
-        parsing: { xAxisKey: "t", yAxisKey: "y" },
+        parsing: { xAxisKey: 't', yAxisKey: 'y' },
+        plugins: { legend: { position: 'top' } },
         scales: {
-          x: { type: "time", time: { tooltipFormat: "MMM d, HH:mm" } },
-          y: { beginAtZero: true }
+          x: { type: 'time', time: { tooltipFormat: 'MMM d, HH:mm' }, title: { display:true, text:'Date/Time' } },
+          y: { beginAtZero:true, title:{ display:true, text:'Player Count' } }
         }
       }
     });
 
-    // hour dropdowns
-    ["startHour", "endHour"].forEach(id => {
+    // Populate hours
+    ['startHour','endHour'].forEach(id => {
       const sel = document.getElementById(id);
-      for (let h = 0; h < 24; h++) {
-        const opt = document.createElement("option");
-        const hh  = String(h).padStart(2, "0");
+      for (let h=0; h<24; h++) {
+        const opt = document.createElement('option');
+        const hh  = String(h).padStart(2,'0');
         opt.value = hh;
-        opt.text  = hh + ":00";
+        opt.text  = `${hh}:00`;
         sel.appendChild(opt);
       }
     });
 
+    // Fetch & render
     async function loadRange(range) {
       let start, end = luxon.DateTime.now();
-
       if (range) {
-        if (range === "1h") start = NOW.minus({ hours: 1 });
-        else if (range === "7d") start = NOW.minus({ days: 7 });
-        else start = NOW.minus({ days: 1 });
+        if (range==='1h') start = NOW.minus({hours:1});
+        else if (range==='7d') start = NOW.minus({days:7});
+        else start = NOW.minus({days:1});
       } else {
-        const d1 = document.getElementById("startDate").value;
-        const h1 = document.getElementById("startHour").value;
-        const d2 = document.getElementById("endDate").value;
-        const h2 = document.getElementById("endHour").value;
+        const d1 = document.getElementById('startDate').value;
+        const h1 = document.getElementById('startHour').value;
+        const d2 = document.getElementById('endDate').value;
+        const h2 = document.getElementById('endHour').value;
         start = luxon.DateTime.fromISO(`${d1}T${h1}:00`);
         end   = luxon.DateTime.fromISO(`${d2}T${h2}:00`);
       }
-
       const sISO = encodeURIComponent(start.toISO());
       const eISO = encodeURIComponent(end.toISO());
       const res  = await fetch(`/api/history/${APPID}?start=${sISO}&end=${eISO}`);
       const data = await res.json();
 
-      chart.data.datasets[0].data = data.map(d => ({ t: d.timestamp, y: d.count }));
+      // Update chart
+      chart.data.datasets[0].data = data.map(d=>({t:d.timestamp,y:d.count}));
       chart.update();
 
-      const statsEl = document.getElementById("stats");
+      // Update stats panel
+      const statsEl = document.getElementById('stats');
       if (data.length) {
-        const counts = data.map(d => d.count);
-        const min = Math.min(...counts);
-        const max = Math.max(...counts);
-        const avg = (counts.reduce((a,b) => a + b, 0) / counts.length).toFixed(1);
-        statsEl.textContent = `Min: ${min}, Max: ${max}, Avg: ${avg}`;
+        const counts = data.map(d=>d.count);
+        const min    = Math.min(...counts);
+        const max    = Math.max(...counts);
+        const avg    = (counts.reduce((a,b)=>a+b,0)/counts.length).toFixed(1);
+        statsEl.textContent = `Min: ${min} | Max: ${max} | Avg: ${avg}`;
       } else {
-        statsEl.textContent = "No data in this range.";
+        statsEl.textContent = 'No data available';
       }
     }
 
-    // events
-    document.getElementById("quickRange").addEventListener("change", e => {
-      const r = e.target.value;
-      const start = r === "1h"
-        ? NOW.minus({ hours: 1 })
-        : r === "7d"
-          ? NOW.minus({ days: 7 })
-          : NOW.minus({ days: 1 });
-
-      document.getElementById("startDate").value = start.toISODate();
-      document.getElementById("startHour").value = start.toFormat("HH");
-      document.getElementById("endDate").value   = NOW.toISODate();
-      document.getElementById("endHour").value   = NOW.toFormat("HH");
+    // Event listeners
+    document.getElementById('quickRange').addEventListener('change', e=>{
+      const r=e.target.value;
+      const start = r==='1h'?NOW.minus({hours:1}):r==='7d'?NOW.minus({days:7}):NOW.minus({days:1});
+      document.getElementById('startDate').value = start.toISODate();
+      document.getElementById('startHour').value = start.toFormat('HH');
+      document.getElementById('endDate').value   = NOW.toISODate();
+      document.getElementById('endHour').value   = NOW.toFormat('HH');
       loadRange(r);
     });
+    document.getElementById('applyManual').addEventListener('click', ()=>loadRange(null));
 
-    document.getElementById("applyManual").addEventListener("click", () => loadRange(null));
-
-    window.addEventListener("load", () => {
-      document.getElementById("quickRange").value = "24h";
-      document.getElementById("quickRange").dispatchEvent(new Event("change"));
-      setInterval(() => loadRange(document.getElementById("quickRange").value), 300000);
+    // Initialize
+    window.addEventListener('load', ()=>{
+      document.getElementById('quickRange').value='24h';
+      document.getElementById('quickRange').dispatchEvent(new Event('change'));
+      setInterval(()=>loadRange(document.getElementById('quickRange').value),300000);
     });
   </script>
 </body>
