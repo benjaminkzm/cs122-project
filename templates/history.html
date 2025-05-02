@@ -27,15 +27,17 @@
     </label>
   </div>
 
-  <!-- Date Pickers -->
+  <!-- Manual Date & Hour Picker -->
   <div style="text-align: center; margin: 1em 0;">
     <label>Start:
-      <input type="date" id="startDate" value="{{ default_start }}">
+      <input type="date" id="startDate">
+      <select id="startHour"></select>
     </label>
     <label style="margin-left: 1em;">End:
-      <input type="date" id="endDate" value="{{ default_end }}">
+      <input type="date" id="endDate">
+      <select id="endHour"></select>
     </label>
-    <button id="apply" style="margin-left: 1em;">Apply</button>
+    <button id="applyManual" style="margin-left: 1em;">Apply</button>
   </div>
 
   <!-- Stats Display -->
@@ -49,6 +51,7 @@
   <script>
     var appid = parseInt("{{ appid }}", 10);
     const chartCtx = document.getElementById('chart').getContext('2d');
+    const now = luxon.DateTime.now();
 
     // Initialize Chart.js
     const chart = new Chart(chartCtx, {
@@ -63,51 +66,79 @@
       }
     });
 
-    // Fetch and render data
-    async function fetchData() {
-      const start = document.getElementById('startDate').value;
-      const end = document.getElementById('endDate').value;
-      const res = await fetch(`/api/history/${appid}?start=${start}&end=${end}`);
+    // Populate hour dropdowns (00 to 23)
+    function initHourSelect(id) {
+      const select = document.getElementById(id);
+      for (let h = 0; h < 24; h++) {
+        const opt = document.createElement('option');
+        const val = h.toString().padStart(2, '0');
+        opt.value = val;
+        opt.text = val + ':00';
+        select.appendChild(opt);
+      }
+    }
+    initHourSelect('startHour');
+    initHourSelect('endHour');
+
+    // Load data by range string or manual pick
+    async function loadRange(range) {
+      let start, end;
+      const now = luxon.DateTime.now();
+      if (range) {
+        if (range === '1h') start = now.minus({ hours: 1 });
+        else if (range === '24h') start = now.minus({ days: 1 });
+        else if (range === '7d') start = now.minus({ days: 7 });
+        end = now;
+      } else {
+        // Manual selection
+        const sd = document.getElementById('startDate').value;
+        const sh = document.getElementById('startHour').value;
+        const ed = document.getElementById('endDate').value;
+        const eh = document.getElementById('endHour').value;
+        start = luxon.DateTime.fromISO(`${sd}T${sh}:00`);
+        end   = luxon.DateTime.fromISO(`${ed}T${eh}:00`);
+      }
+      const startISO = encodeURIComponent(start.toISO());
+      const endISO   = encodeURIComponent(end.toISO());
+
+      const res = await fetch(`/api/history/${appid}?start=${startISO}&end=${endISO}`);
       const data = await res.json();
-      // Update chart
       chart.data.datasets[0].data = data.map(d => ({ t: d.timestamp, y: d.count }));
       chart.update();
-      // Update stats
+
       if (data.length) {
         const counts = data.map(d => d.count);
         const min = Math.min(...counts);
         const max = Math.max(...counts);
-        const avg = (counts.reduce((a,b) => a+b,0)/counts.length).toFixed(1);
-        document.getElementById('stats').textContent =
-          `Min: ${min}, Max: ${max}, Avg: ${avg}`;
+        const avg = (counts.reduce((a,b)=>a+b,0)/counts.length).toFixed(1);
+        document.getElementById('stats').textContent = `Min: ${min}, Max: ${max}, Avg: ${avg}`;
       } else {
         document.getElementById('stats').textContent = 'No data in this range.';
       }
     }
 
-    // Quick range setter using Luxon
-    function setQuickRange(range) {
-      const now = luxon.DateTime.now();
-      let start;
-      if (range === '1h') start = now.minus({ hours: 1 });
-      else if (range === '24h') start = now.minus({ days: 1 });
-      else if (range === '7d') start = now.minus({ days: 7 });
-      document.getElementById('startDate').value = start.toISODate();
-      document.getElementById('endDate').value = now.toISODate();
-      fetchData();
-    }
-
     // Event listeners
-    document.getElementById('quickRange')
-      .addEventListener('change', e => setQuickRange(e.target.value));
-    document.getElementById('apply')
-      .addEventListener('click', fetchData);
+    document.getElementById('quickRange').addEventListener('change', e => {
+      // update manual picks
+      const range = e.target.value;
+      const start = (range==='1h'? now.minus({hours:1}) : range==='24h'? now.minus({days:1}) : now.minus({days:7}));
+      document.getElementById('startDate').value = start.toISODate();
+      document.getElementById('startHour').value = start.toFormat('HH');
+      document.getElementById('endDate').value = now.toISODate();
+      document.getElementById('endHour').value = now.toFormat('HH');
+      loadRange(range);
+    });
 
-    // Auto-refresh interval (5 min)
-    setInterval(fetchData, 300000);
+    document.getElementById('applyManual').addEventListener('click', () => loadRange(null));
 
-    // On load, initialize inputs and load 24h data
-    window.addEventListener('load', () => setQuickRange('24h'));
+    // On load
+    window.addEventListener('load', () => {
+      // init manual picks to last 24h
+      document.getElementById('quickRange').value = '24h';
+      document.getElementById('quickRange').dispatchEvent(new Event('change'));
+      // auto-refresh
+      setInterval(() => loadRange(document.getElementById('quickRange').value), 300000);
+    });
   </script>
 </body>
 </html>

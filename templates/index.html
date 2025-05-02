@@ -13,55 +13,45 @@
 
   <nav class="navbar">
     <a href="{{ url_for('index') }}">Home</a>
-    <form action="/search" method="GET" class="search-form">
-      <input type="text" name="query" placeholder="Enter Steam AppID" required class="searchbar">
+    <form action="/search"
+          method="GET"
+          class="search-form"
+          autocomplete="off">              
+      <input type="text"
+             name="query"
+             placeholder="Enter AppID or Game Name"
+             required
+             class="searchbar"
+             autocomplete="off" />   
       <button type="submit" class="btn">Search</button>
     </form>
   </nav>
+  
 
   <main style="padding: 1em;">
     {% if game_data %}
       <h2>
         {{ game_data.name }}
-        <small style="font-size: 0.8em; color: #666;">
-          (AppID: {{ game_data.appid }})
-        </small>
+        <small style="font-size: 0.8em; color: #666;">(AppID: {{ game_data.appid }})</small>
       </h2>
 
       <ul style="list-style: none; padding: 0; margin: 1em 0;">
         <li><strong>Players Now:</strong> {{ game_data.player_count }}</li>
         <li><strong>Price:</strong> ${{ "%.2f"|format(game_data.price) }}</li>
-
-        <li>
-          <strong>Reviews:</strong>
-          {% if game_data.review_pct is not none %}
-            {{ game_data.review_pct }}% positive
-          {% else %}
-            N/A
-          {% endif %}
-        </li>
-
+        <li><strong>Reviews:</strong> {% if game_data.review_pct is not none %}{{ game_data.review_pct }}% positive{% else %}N/A{% endif %}</li>
         {% if game_data.recommendations %}
-          <li>
-            <strong>Total Recommendations:</strong>
-            {{ "{:,}".format(game_data.recommendations) }} recommendations
-          </li>
+          <li><strong>Total Recommendations:</strong> {{ "{:,}".format(game_data.recommendations) }} recommendations</li>
         {% endif %}
       </ul>
 
-      <!-- Button linking to history page -->
       <p style="text-align: center; margin: 1.5em 0;">
-        <a href="{{ url_for('history_game', appid=game_data.appid) }}" class="btn">
-          View Player Count History
-        </a>
+        <a href="{{ url_for('history_game', appid=game_data.appid) }}" class="btn">View Player Count History</a>
       </p>
 
       {% if game_data.header_image %}
-        <div style="text-align: center; margin-bottom: 1em;">
-          <img src="{{ game_data.header_image }}"
-               alt="{{ game_data.name }} header"
-               style="max-width: 100%; border-radius: 4px;">
-        </div>
+      <div style="text-align: center; margin-bottom: 1em;">
+        <img src="{{ game_data.header_image }}" alt="{{ game_data.name }} header" style="max-width: 100%; border-radius: 4px;" />
+      </div>
       {% endif %}
 
       <section>
@@ -70,35 +60,46 @@
       </section>
 
       {% if game_data.screenshots %}
-        <section>
-          <h3>Screenshots</h3>
-          <div class="screenshots" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 0.5em;">
-            {% for shot in game_data.screenshots %}
-              <img src="{{ shot }}"
-                   alt="Screenshot of {{ game_data.name }}"
-                   style="width: 200px; border-radius: 4px;">
-            {% endfor %}
-          </div>
-        </section>
+      <section>
+        <h3>Screenshots</h3>
+        <div class="carousel" id="carousel" data-screenshots='{{ game_data.screenshots|tojson }}' style="display:flex; align-items:center; justify-content:center; gap:10px; margin-top:0.5em;">
+          <button id="prevBtn" class="btn">←</button>
+          <img id="carouselImage" src="{{ game_data.screenshots[0] }}" alt="Screenshot of {{ game_data.name }}" style="width:700px; height:auto; border-radius:4px;" />
+          <button id="nextBtn" class="btn">→</button>
+        </div>
+      </section>
+      <script src="{{ url_for('static', filename='carousel.js') }}"></script>
       {% endif %}
 
       {% if game_data.video_urls %}
-        <section>
-          <h3>Trailers</h3>
-          <ul>
-            {% for url in game_data.video_urls %}
-              <li>
-                <a href="{{ url }}" target="_blank">▶ Trailer {{ loop.index }}</a>
-              </li>
-            {% endfor %}
-          </ul>
-        </section>
+      <section>
+        <h3>Trailers</h3>
+        <div
+          class="carousel"
+          id="videoCarousel"
+          data-items='{{ game_data.video_urls|tojson }}'
+          style="display:flex; align-items:center; justify-content:center; gap:10px; margin-top:0.5em;">
+          <button id="prevVideo" class="btn">←</button>
+          <video
+          id="carouselVideo"
+          width="700"
+          controls
+          preload="metadata"
+          style="border-radius:4px;"
+        >
+          <source src="{{ game_data.video_urls[0] }}" type="video/webm">
+          Your browser does not support HTML5 video.
+        </video>
+        
+          <button id="nextVideo" class="btn">→</button>
+        </div>
+      </section>
+      <script src="{{ url_for('static', filename='trailer_carousel.js') }}"></script>
       {% endif %}
+      
 
     {% else %}
-      <p style="text-align: center; margin-top: 2em;">
-        Use the search box above to look up a game by its Steam AppID.
-      </p>
+    <p style="text-align: center; margin-top: 2em;">Use the search box above to look up a game by its Steam AppID or Game Name.</p>
     {% endif %}
   </main>
 

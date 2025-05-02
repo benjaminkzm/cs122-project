@@ -18,36 +18,42 @@ GAME_APPIDS = {
     730:     "Counter-Strike 2"
 }
 
-# Live search route
+# Build a name→appid lookup for text searches
+NAME_TO_APPID = {name.lower(): appid for appid, name in GAME_APPIDS.items()}
+
 
 @app.route('/')
 def index():
-    # Renders your original index.html with an empty form
+    # Renders your search page
     return render_template('index.html', game_data=None)
+
 
 @app.route('/search')
 def search():
-    query = request.args.get('query')
+    query = (request.args.get('query') or "").strip()
     if not query:
         return "No query provided.", 400
 
-    try:
+    # Determine if query is numeric AppID or a game name
+    if query.isdigit():
         appid = int(query)
-        if appid <= 0:
-            raise ValueError()
-    except ValueError:
-        return "Invalid AppID.", 400
+    else:
+        appid = NAME_TO_APPID.get(query.lower())
+        if appid is None:
+            return f"Unknown game name '{query}'.", 404
 
+    # Fetch live Steam data
     game_data = fetch_game_data(appid)
     if not game_data:
         return f"No data for AppID {appid}.", 404
 
+    # Fetch reviews percentage
     review_pct = fetch_overall_reviews(appid)
     game_data['review_pct'] = round(review_pct, 1) if review_pct is not None else None
 
     return render_template('index.html', game_data=game_data)
 
-# History routes
+
 @app.route('/history/<int:appid>')
 def history_game(appid):
     if db is None:
@@ -57,15 +63,19 @@ def history_game(appid):
         return "Unknown AppID", 404
 
     # Default last 24h
+    # Default last 24h using full datetime-local format
     now = datetime.utcnow()
-    default_start = (now - timedelta(days=1)).date().isoformat()
-    default_end   = now.date().isoformat()
+    default_start = (now - timedelta(days=1)).strftime("%Y-%m-%dT%H:%M")
+    default_end   = now.strftime("%Y-%m-%dT%H:%M")
 
-    return render_template('history.html',
-                           appid=appid,
-                           game_name=name,
-                           default_start=default_start,
-                           default_end=default_end)
+    return render_template(
+        'history.html',
+        appid=appid,
+        game_name=name,
+        default_start=default_start,
+        default_end=default_end
+    )
+
 
 @app.route('/api/history/<int:appid>')
 def api_history(appid):
@@ -80,12 +90,14 @@ def api_history(appid):
     except:
         return jsonify(error="invalid date"), 400
 
-    # Index by timestamp, then filter by appid client-side to avoid composite index
-    docs = (db.collection('player_counts')
-              .where('timestamp', '>=', start_dt)
-              .where('timestamp', '<',  end_dt)
-              .order_by('timestamp')
-              .stream())
+    # Query by timestamp, then filter by appid client‐side
+    docs = (
+        db.collection('player_counts')
+          .where('timestamp', '>=', start_dt)
+          .where('timestamp', '<',  end_dt)
+          .order_by('timestamp')
+          .stream()
+    )
 
     data = []
     for d in docs:
@@ -98,7 +110,6 @@ def api_history(appid):
         })
     return jsonify(data)
 
-# Server initialization
 
 if __name__ == '__main__':
     app.run(debug=True)
