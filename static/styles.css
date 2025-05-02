@@ -1,58 +1,200 @@
-.navbar {
+/* Global Styles */
+body {
+    margin: 0;
+    background: #ececec;
+    font-family: Arial, sans-serif;
+  }
+  
+  /* Header & Navbar */
+  .site-header {
+    background-color: #111;
+    color: #fff;
+    padding: 1em 0;
+    text-align: center;
+  }
+  .navbar {
     display: flex;
-    /*justify-content: space-between;*/
     align-items: center;
     background-color: black;
     padding: 0 20px;
-}
-
-
-.navbar ul {
+  }
+  .navbar ul {
     list-style-type: none;
     display: flex;
     margin: 0;
     padding: 0;
-}
-
-.navbar li {
+  }
+  .navbar li {
     margin-right: 15px;
-}
-
-.navbar a {
+  }
+  .navbar a {
     color: white;
     text-decoration: none;
     padding: 15px 20px;
     display: block;
-}
-
-.navbar a:hover {
+  }
+  .navbar a:hover {
     background-color: #414040;
-}
-
-/* Search bar inside navbar */
-.search-form {
+  }
+  
+  /* Search Bar and Buttons */
+  .search-form {
     display: flex;
-    margin-left: auto;
-    margin-right: auto;
-}
-
-.searchbar {
+    margin: 0 auto;
+  }
+  .searchbar {
     padding: 8px;
     border: none;
     border-radius: 4px 0 0 4px;
-    align-items: center;
-
-}
-
-.btn {
+  }
+  .btn {
     padding: 8px 12px;
     border: none;
-    background-color:rgb(73, 74, 75);
+    background-color: rgb(73, 74, 75);
     color: white;
     border-radius: 0 4px 4px 0;
     cursor: pointer;
-    align-items: center;
-}
-.btn:hover {
-    background-color:rgb(87, 87, 87);
-}
+  }
+  .btn:hover {
+    background-color: rgb(87, 87, 87);
+  }
+  
+  /* Main Container */
+  .container {
+    max-width: 900px;
+    margin: 2em auto;
+    background: #fff;
+    padding: 2em;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Game Meta / Stats */
+  .game-meta img {
+    max-width: 100%;
+    border-radius: 4px;
+    margin-bottom: 1em;
+  }
+
+   /* Description Section */
+  .game-description {
+    margin: 2em 0;
+  }
+
+   /* Media Section */
+  .media-section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2em;
+  }
+  @media (max-width: 768px) {
+    .media-section {
+      grid-template-columns: 1fr;
+    }
+  }
+  
+  /* Carousel Images & Video */
+  .carousel-section img,
+  #carouselImage,
+  #carouselVideo {
+    width: 100%;
+    max-width: 600px;
+    height: auto;
+    border-radius: 4px;
+  }
+  
+  /* Container */
+.container {
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+  }
+  
+  /* Site Header */
+  .site-header {
+    background: #121212;
+    color: #eee;
+    text-align: center;
+    padding: 2rem 1rem;
+  }
+  .site-header .tagline {
+    margin: 0.5rem 0 1rem;
+    font-size: 1.1rem;
+    color: #bbb;
+  }
+  .header-figure {
+    margin: 0 auto 1rem;
+    max-width: 100%;
+  }
+  .header-figure img {
+    width: 100%;
+    height: auto;
+    border-radius: 6px;
+  }
+  
+  /* Game Meta & Lists */
+  .game-meta h2 {
+    margin-bottom: 0.5rem;
+  }
+  .meta-list {
+    list-style: none;
+    padding: 0;
+    margin: 1rem 0;
+    display: inline-block;
+    text-align: left;
+  }
+  .meta-list li {
+    margin: 0.4rem 0;
+  }
+  
+  /* Description Section */
+  .game-description {
+    margin: 2rem 0;
+  }
+  
+  /* Media Section */
+  .media-section {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    margin-bottom: 2rem;
+  }
+  .carousel-section {
+    text-align: center;
+  }
+  .carousel img,
+  .carousel video {
+    max-width: 100%;
+    height: auto;
+    border-radius: 4px;
+  }
+  
+  /* Welcome Card */
+  .welcome-card {
+    background: #fff;
+    padding: 2rem;
+    border-radius: 6px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    margin-bottom: 2rem;
+  }
+  
+  /* Footer */
+  .site-footer {
+    text-align: center;
+    padding: 1rem;
+    background: #f5f5f5;
+    color: #555;
+    font-size: 0.9rem;
+  }
+  .site-footer a {
+    color: #3c8dbc;
+    text-decoration: none;
+  }
+  .site-footer a:hover {
+    text-decoration: underline;
+  }
+  
+  /* utility */
+  .center { text-align: center; }
+  

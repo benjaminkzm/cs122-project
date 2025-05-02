@@ -63,7 +63,6 @@ def history_game(appid):
         return "Unknown AppID", 404
 
     # Default last 24h
-    # Default last 24h using full datetime-local format
     now = datetime.utcnow()
     default_start = (now - timedelta(days=1)).strftime("%Y-%m-%dT%H:%M")
     default_end   = now.strftime("%Y-%m-%dT%H:%M")
