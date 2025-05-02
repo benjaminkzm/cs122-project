@@ -53,8 +53,19 @@
           {% endif %}
         </ul>
         <p class="center">
-          <a href="{{ url_for('history_game', appid=game_data.appid) }}" class="btn">View History</a>
+          <a href="{{ url_for('history_game', appid=game_data.appid) }}" class="btn" id="viewHistory">View History</a>
         </p>
+
+        <script>
+          const link = document.getElementById('viewHistory');
+          link.addEventListener('click', function(event) {
+            // Prevent the default action (following the link)
+            event.preventDefault();
+            const url = link.getAttribute('href');
+            // Open the URL in a new popup window
+            window.open(url, '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
+        });
+        </script>
       </section>
 
       <!-- DESCRIPTION -->
