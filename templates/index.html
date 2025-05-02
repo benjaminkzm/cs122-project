@@ -12,8 +12,8 @@
   </header>
 
   <nav class="navbar">
-    <a href="{{ url_for('home') }}">Home</a>
-    <form action="{{ url_for('search') }}" method="GET">
+    <a href="{{ url_for('index') }}">Home</a>
+    <form action="/search" method="GET">
       <input type="text" name="query" placeholder="Enter Steam AppID" required>
       <button type="submit">Search</button>
     </form>
@@ -48,6 +48,13 @@
           </li>
         {% endif %}
       </ul>
+
+      <!-- Button linking to history page -->
+      <p style="text-align: center; margin: 1.5em 0;">
+        <a href="{{ url_for('history_game', appid=game_data.appid) }}" class="btn">
+          View Player Count History
+        </a>
+      </p>
 
       {% if game_data.header_image %}
         <div style="text-align: center; margin-bottom: 1em;">

@@ -1,10 +1,28 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, jsonify
 from steamapi import fetch_game_data, fetch_overall_reviews
+from google.cloud import firestore
+from datetime import datetime, timedelta
 
 app = Flask(__name__)
 
+# Firestore client initialization
+try:
+    db = firestore.Client()
+except:
+    db = None
+
+# Game AppIDs and names
+GAME_APPIDS = {
+    2767030: "Marvel Rivals",
+    570:     "Dota 2",
+    730:     "Counter-Strike 2"
+}
+
+# Live search route
+
 @app.route('/')
-def home():
+def index():
+    # Renders your original index.html with an empty form
     return render_template('index.html', game_data=None)
 
 @app.route('/search')
@@ -15,20 +33,72 @@ def search():
 
     try:
         appid = int(query)
-        # Check if the AppID is valid
         if appid <= 0:
-            raise ValueError
+            raise ValueError()
     except ValueError:
-        return "Invalid AppID. Please enter a positive integer.", 400
+        return "Invalid AppID.", 400
 
     game_data = fetch_game_data(appid)
     if not game_data:
-        return f"No data found for AppID {appid}.", 404
+        return f"No data for AppID {appid}.", 404
 
     review_pct = fetch_overall_reviews(appid)
     game_data['review_pct'] = round(review_pct, 1) if review_pct is not None else None
 
     return render_template('index.html', game_data=game_data)
 
+# History routes
+@app.route('/history/<int:appid>')
+def history_game(appid):
+    if db is None:
+        return "History unavailable (no Firestore)", 500
+    name = GAME_APPIDS.get(appid)
+    if not name:
+        return "Unknown AppID", 404
+
+    # Default last 24h
+    now = datetime.utcnow()
+    default_start = (now - timedelta(days=1)).date().isoformat()
+    default_end   = now.date().isoformat()
+
+    return render_template('history.html',
+                           appid=appid,
+                           game_name=name,
+                           default_start=default_start,
+                           default_end=default_end)
+
+@app.route('/api/history/<int:appid>')
+def api_history(appid):
+    if db is None:
+        return jsonify(error="no db"), 500
+
+    start = request.args.get('start')
+    end   = request.args.get('end')
+    try:
+        start_dt = datetime.fromisoformat(start)
+        end_dt   = datetime.fromisoformat(end) + timedelta(days=1)
+    except:
+        return jsonify(error="invalid date"), 400
+
+    # Index by timestamp, then filter by appid client-side to avoid composite index
+    docs = (db.collection('player_counts')
+              .where('timestamp', '>=', start_dt)
+              .where('timestamp', '<',  end_dt)
+              .order_by('timestamp')
+              .stream())
+
+    data = []
+    for d in docs:
+        rec = d.to_dict()
+        if rec.get('appid') != appid:
+            continue
+        data.append({
+            'timestamp': rec['timestamp'].isoformat(),
+            'count':     rec['player_count']
+        })
+    return jsonify(data)
+
+# Server initialization
+
 if __name__ == '__main__':
-    app.run(debug=True, host='127.0.0.1', port=5000)
+    app.run(debug=True)
