@@ -6,7 +6,6 @@ from google.cloud import firestore
 APP_IDS = [2767030, 570, 730]
 
 def steamTracker(request):
-    # now initialize inside the function
     db = firestore.Client()
     col = db.collection("player_counts")
 

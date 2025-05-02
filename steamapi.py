@@ -104,17 +104,3 @@ def fetch_overall_reviews(appid):
         return positive_percentage
     else:
         print(f"Failed to fetch review data for appid {appid}, Status code: {response.status_code}")
-
-
-# Tester
-game = fetch_game_data(2767030)  # Example usage
-print(game['name'])  # Print the fetched game data
-print(game['player_count'])  # Print the fetched game data
-print(game['price'])  # Print the fetched game data
-print(game['short_description'])  # Print the fetched game data
-print(game['detailed_description'])  # Print the fetched game data
-print(game['video_urls'])  # Print the fetched game data
-print(game['screenshots'])  # Print the fetched game data
-
-# Example for Dota 2 (appid: 570)
-reviews = fetch_overall_reviews(570)

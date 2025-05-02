@@ -1,27 +1,99 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Steam Database</title>
-    <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8">
+  <title>Steam Database</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
-    <h1 style="text-align: center;">Steam Database</h1>
 
-    <nav class="navbar">
-        <div class="nav-left">
-            <ul>
-                <li><a href="index.html">Home</a></li>
-            </ul>
-        </div>
+  <header style="text-align: center; margin: 1.5em 0;">
+    <h1>Steam Database</h1>
+  </header>
 
-        <div class="nav-right">
-            <form class="search-form" action="/search" method="GET">
-                <input type="text" name="query" placeholder="Search games..." required>
-                <button type="submit">Search</button>
-            </form>
+  <nav class="navbar">
+    <a href="{{ url_for('home') }}">Home</a>
+    <form action="{{ url_for('search') }}" method="GET">
+      <input type="text" name="query" placeholder="Enter Steam AppID" required>
+      <button type="submit">Search</button>
+    </form>
+  </nav>
+
+  <main style="padding: 1em;">
+    {% if game_data %}
+      <h2>
+        {{ game_data.name }}
+        <small style="font-size: 0.8em; color: #666;">
+          (AppID: {{ game_data.appid }})
+        </small>
+      </h2>
+
+      <ul style="list-style: none; padding: 0; margin: 1em 0;">
+        <li><strong>Players Now:</strong> {{ game_data.player_count }}</li>
+        <li><strong>Price:</strong> ${{ "%.2f"|format(game_data.price) }}</li>
+
+        <li>
+          <strong>Reviews:</strong>
+          {% if game_data.review_pct is not none %}
+            {{ game_data.review_pct }}% positive
+          {% else %}
+            N/A
+          {% endif %}
+        </li>
+
+        {% if game_data.recommendations %}
+          <li>
+            <strong>Total Recommendations:</strong>
+            {{ "{:,}".format(game_data.recommendations) }} recommendations
+          </li>
+        {% endif %}
+      </ul>
+
+      {% if game_data.header_image %}
+        <div style="text-align: center; margin-bottom: 1em;">
+          <img src="{{ game_data.header_image }}"
+               alt="{{ game_data.name }} header"
+               style="max-width: 100%; border-radius: 4px;">
         </div>
-    </nav>
+      {% endif %}
+
+      <section>
+        <h3>Description</h3>
+        <p>{{ game_data.short_description }}</p>
+      </section>
+
+      {% if game_data.screenshots %}
+        <section>
+          <h3>Screenshots</h3>
+          <div class="screenshots" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 0.5em;">
+            {% for shot in game_data.screenshots %}
+              <img src="{{ shot }}"
+                   alt="Screenshot of {{ game_data.name }}"
+                   style="width: 200px; border-radius: 4px;">
+            {% endfor %}
+          </div>
+        </section>
+      {% endif %}
+
+      {% if game_data.video_urls %}
+        <section>
+          <h3>Trailers</h3>
+          <ul>
+            {% for url in game_data.video_urls %}
+              <li>
+                <a href="{{ url }}" target="_blank">▶ Trailer {{ loop.index }}</a>
+              </li>
+            {% endfor %}
+          </ul>
+        </section>
+      {% endif %}
+
+    {% else %}
+      <p style="text-align: center; margin-top: 2em;">
+        Use the search box above to look up a game by its Steam AppID.
+      </p>
+    {% endif %}
+  </main>
 
 </body>
 </html>
