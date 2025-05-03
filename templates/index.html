@@ -72,35 +72,40 @@
         </div>
       </div>
 
+      <div class="game-card__meta">
+        <div><strong>Developer:</strong> {{ game_data.developer }}</div>
+        <div><strong>Publisher:</strong> {{ game_data.publisher }}</div>
+        <div><strong>Release Date:</strong> {{ game_data.release_date }}</div>
+      </div>
+
       <ul class="game-card__stats">
         <li>
-          <span class="stat-label">Online Players Now: </span>
+          <span class="stat-label">Online Players</span>
           <span class="stat-value">{{ game_data.player_count }}</span>
         </li>
         <li>
-          <span class="stat-label">Price: </span>
+          <span class="stat-label">Price</span>
           <span class="stat-value">
             {% if game_data.price == 0 %}Free{% else %}${{ "%.2f"|format(game_data.price) }}{% endif %}
           </span>
         </li>
-        <li>
-          <span class="stat-label">Positive Reviews: </span>
-          <span class="stat-value">
-            {% if game_data.review_pct is not none %}
-              {{ game_data.review_pct }}%
-            {% else %}N/A{% endif %}
-          </span>
-        </li>
-        {% if game_data.recommendations %}
-        <li>
-          <span class="stat-label">Recommendations</span>
-          <span class="stat-value">
-            {{ "{:,}".format(game_data.recommendations) }}
-          </span>
-        </li>
-        {% endif %}
       </ul>
-    </section>
+      
+      <div class="game-card__reviews">
+        <div class="small-stat">
+          <span class="stat-label">Positive Reviews</span>
+          <span class="stat-value">{{ game_data.review_positive }}%</span>
+        </div>
+        <div class="small-stat">
+          <span class="stat-label">Negative Reviews</span>
+          <span class="stat-value">{{ game_data.review_negative }}%</span>
+        </div>
+        <div class="small-stat">
+          <span class="stat-label">Total Reviews</span>
+          <span class="stat-value">{{ game_data.review_total }}</span>
+        </div>
+      </div>
+      
 
 
     <!-- DESCRIPTION -->

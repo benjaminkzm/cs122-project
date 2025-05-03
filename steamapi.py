@@ -5,72 +5,80 @@ from bs4 import BeautifulSoup as bs
 
 
 def fetch_game_data(appid):
-    """Fetch player count and price data from Steam API based on AppID."""
+    """Fetch player count + store info (incl. header_image) for a given AppID."""
     try:
-        # Fetch player count
-        player_url = f"https://api.steampowered.com/ISteamUserStats/GetNumberOfCurrentPlayers/v1/?appid={appid}"
-        player_response = requests.get(player_url)
-        player_data = player_response.json().get('response', {})
-        player_count = player_data.get('player_count', 0)  # Default to 0 if no player count available
-        
-        # Fetch price and game name
-        price_url = f"https://store.steampowered.com/api/appdetails?appids={appid}"
-        price_response = requests.get(price_url)
-        
-        if price_response.status_code != 200:
-            print(f"Failed to fetch price information for appid {appid}")
-            return None  # Skip games without price data
-        
-        # Check if the response contains valid JSON
-        price_data_json = price_response.json()
-        
-        if price_data_json is None or str(appid) not in price_data_json or 'data' not in price_data_json[str(appid)]:
-            print(f"No valid price data available for appid {appid}")
-            return None  # Skip games without valid price data
-        
-        # Safely get price data
-        price_data = price_data_json[str(appid)].get('data', None)
-        
-        if not price_data:
-            print(f"No price data found for appid {appid}")
-            return None  # Skip games without price data
+        # 1) Player count
+        pr = requests.get(
+            f"https://api.steampowered.com/ISteamUserStats/"
+            f"GetNumberOfCurrentPlayers/v1/?appid={appid}",
+            timeout=5
+        ).json().get("response", {})
+        player_count = pr.get("player_count", 0)
 
-        name = price_data.get('name', 'Unknown Game')
-        price = 0.0  # Default price if no valid price information
+        # 2) Store details — ask for US / English
+        store_url = (
+            "https://store.steampowered.com/api/appdetails"
+            f"?appids={appid}&cc=US&l=en"
+        )
+        jr = requests.get(store_url, timeout=5).json().get(str(appid), {})
 
-        if 'price_overview' in price_data and price_data['price_overview'] is not None:
-            price_cents = price_data['price_overview'].get('final', 0)
-            price = price_cents / 100  # Convert cents to dollars
+        # If Steam says `success: false`, there's no data (no image, no name, etc)
+        if not jr.get("success", False):
+            print(f"❌ Store API returned success=false for {appid}")
+            return None
 
-        # Fetch game description
-        short_description = price_data.get('short_description', 'No description available')
-        detailed_description = price_data.get('detailed_description', 'No detailed description available')
-        short_description = clean(short_description) # clean raw html
-        detailed_description = clean(detailed_description) 
+        data = jr["data"]
 
-        # Fetch video (trailers, etc.) if available
-        videos = price_data.get('movies', [])
-        video_urls = [video['webm']['max'] for video in videos if 'webm' in video]
+        # Now you can safely grab the header image, screenshots, etc:
+        header_image = data.get("header_image")  # this will now exist
+        screenshots  = [s["path_full"] for s in data.get("screenshots", [])]
+        videos       = [m["webm"]["max"] for m in data.get("movies",[])
+                        if m.get("webm")]
+
+        # 3) Price + name
+        price = 0.0
+        if data.get("price_overview"):
+            price = data["price_overview"]["final"] / 100.0
+
+        name = data.get("name", "Unknown Game")
+
+        # 4) Descriptions (clean HTML)
+        def clean(raw):
+            return bs(raw or "", "html.parser").get_text(" ", strip=True)
+
+        short_desc     = clean(data.get("short_description"))
+        detailed_desc  = clean(data.get("detailed_description"))
         
-        # Images
-        header_image = price_data.get('header_image')
-        screenshots = [s['path_full'] for s in price_data.get('screenshots', [])]
+        # 5) Developer / publisher
+        devs = data.get('developers', [])
+        developer = ", ".join(devs) if devs else "Unknown"
+        
+        # 6) Publisher
+        pubs = data.get("publishers", [])
+        publisher = ", ".join(pubs) if pubs else "Unknown"
+
+        # 7) Release date
+        rd = data.get("release_date", {})
+        release_date = rd.get("date", "Unknown")
 
         return {
-            'appid': appid,
-            'name': name,
-            'player_count': player_count,
-            'price': price,
-            'short_description': short_description,
-            'detailed_description': detailed_description,
-            'video_urls': video_urls,
-            'header_image': header_image,
-            'screenshots': screenshots
+            "appid": appid,
+            "name": name,
+            "player_count": player_count,
+            "price": price,
+            "short_description": short_desc,
+            "detailed_description": detailed_desc,
+            "header_image": header_image,
+            "screenshots": screenshots,
+            "video_urls": videos,
+            'developer': developer,
+            "publisher": publisher,
+            "release_date": release_date
         }
 
     except Exception as e:
-        print(f"Error fetching data for appid {appid}: {e}")
-        return None  # Skip this game if an error occurs
+        print(f"⚠️ Error fetching data for {appid}: {e}")
+        return None
 
 
 def clean(raw_desc):
@@ -99,28 +107,29 @@ def fetch_all():
         raise Exception("Failed to fetch Steam Apps")
     
 def fetch_overall_reviews(appid):
-    """Fetch overall reviews from Steam using SteamSpy API, Web 
-    scraping requires alot of time if reviews are large and there
-    is request limits. Also it may be against TOS"""
+    """Fetch overall reviews from SteamSpy API."""
     url = f"https://steamspy.com/api.php?request=appdetails&appid={appid}"
-    response = requests.get(url)
-    if response.status_code == 200:
-        data = response.json()
-        
-        # Extracting review data
-        positives = data.get('positive', 0)
-        negatives = data.get('negative', 0)
-        positive_percentage = 0
-        
-        if positives and negatives:
-            total_reviews = positives + negatives
-            positive_percentage = (positives / total_reviews) * 100 if total_reviews > 0 else 0
-            
-            print(f"Game {appid} has {positives} positive reviews out of {total_reviews} total reviews.")
-            print(f"Overall Review Percentage: {positive_percentage:.2f}%")
-        else:
-            print(f"No review data available for appid {appid}")
-            
-        return positive_percentage
-    else:
-        print(f"Failed to fetch review data for appid {appid}, Status code: {response.status_code}") 
+    resp = requests.get(url)
+    if resp.status_code != 200:
+        return None
+
+    data = resp.json()
+    positives = data.get('positive', 0)
+    negatives = data.get('negative', 0)
+    total     = positives + negatives
+
+    if total == 0:
+        return {
+            "positive_pct": None,
+            "negative_pct": None,
+            "total": 0
+        }
+
+    pos_pct = round((positives / total) * 100, 1)
+    neg_pct = round((negatives / total) * 100, 1)
+
+    return {
+        "positive_pct": pos_pct,
+        "negative_pct": neg_pct,
+        "total": total
+    }

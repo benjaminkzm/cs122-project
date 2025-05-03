@@ -13,10 +13,9 @@ try:
 except:
     db = None
 
-# Game AppIDs and names
 GAME_APPIDS = fetch_all()
 
-# Build a name→appid lookup for text searches
+# Build a lowercase name→appid lookup
 NAME_TO_APPID = {name.lower(): appid for appid, name in GAME_APPIDS.items()}
 
 @app.route('/')
@@ -29,7 +28,7 @@ def search():
     if not query:
         return "No query provided.", 400
 
-    # Determine if query is numeric AppID or a game name
+    # Decide if query is an AppID or a game name
     if query.isdigit():
         appid = int(query)
     else:
@@ -37,14 +36,16 @@ def search():
         if appid is None:
             return f"Unknown game name '{query}'.", 404
 
-    # Fetch live Steam data
+    # Fetch core Steam info
     game_data = fetch_game_data(appid)
     if not game_data:
         return f"No data for AppID {appid}.", 404
 
-    # Fetch reviews percentage
-    review_pct = fetch_overall_reviews(appid)
-    game_data['review_pct'] = round(review_pct, 1) if review_pct is not None else None
+    # Fetch review breakdown
+    stats = fetch_overall_reviews(appid) or {}
+    game_data['review_positive'] = stats.get('positive_pct')
+    game_data['review_negative'] = stats.get('negative_pct')
+    game_data['review_total']    = stats.get('total')
 
     return render_template('index.html', game_data=game_data)
 
@@ -56,7 +57,7 @@ def history_game(appid):
     if not name:
         return "Unknown AppID", 404
 
-    # Default last 24h
+    # Default to the past 24 hours
     now = datetime.utcnow()
     default_start = (now - timedelta(days=1)).strftime("%Y-%m-%dT%H:%M")
     default_end   = now.strftime("%Y-%m-%dT%H:%M")
@@ -82,7 +83,7 @@ def api_history(appid):
     except:
         return jsonify(error="invalid date"), 400
 
-    # Query by timestamp, then filter by appid client‐side
+    # Query only on timestamp—avoid needing a composite index
     docs = (
         db.collection('player_counts')
           .where('timestamp', '>=', start_dt)
@@ -92,14 +93,15 @@ def api_history(appid):
     )
 
     data = []
-    for d in docs:
-        rec = d.to_dict()
+    for doc in docs:
+        rec = doc.to_dict()
         if rec.get('appid') != appid:
             continue
         data.append({
             'timestamp': rec['timestamp'].isoformat(),
             'count':     rec['player_count']
         })
+
     return jsonify(data)
 
 @app.route('/export/history/<int:appid>')
@@ -112,7 +114,6 @@ def export_history(appid):
     except Exception:
         return "Invalid date format", 400
 
-    # 1) Query only on timestamp (no appid filter)
     docs = (
         db.collection('player_counts')
           .where('timestamp', '>=', start_dt)
@@ -121,18 +122,15 @@ def export_history(appid):
           .stream()
     )
 
-    # 2) Build CSV in memory
     buf = StringIO()
     writer = csv.writer(buf)
     writer.writerow(['timestamp','player_count'])
     for doc in docs:
         d = doc.to_dict()
-        # 3) Filter client-side
         if d.get('appid') != appid:
             continue
         writer.writerow([d['timestamp'].isoformat(), d['player_count']])
 
-    # 4) Return as a downloadable CSV
     resp = make_response(buf.getvalue())
     resp.headers['Content-Type'] = 'text/csv'
     resp.headers['Content-Disposition'] = (

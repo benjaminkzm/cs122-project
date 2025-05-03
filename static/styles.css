@@ -14,20 +14,10 @@ body {
   align-items: center;
   justify-content: space-between;
 }
-.site-header > div {
-  flex: 1;
-}
-.site-header .center-col {
-  text-align: center;
-}
-.site-header h1 {
-  margin: 0;
-  font-size: 1.5rem;
-}
-.site-header p {
-  margin: 0.25rem 0 0;
-  font-weight: 300;
-}
+.site-header > div { flex: 1; }
+.site-header .center-col { text-align: center; }
+.site-header h1 { margin: 0; font-size: 1.5rem; }
+.site-header p { margin: 0.25rem 0 0; font-weight: 300; }
 
 /* Search Form */
 .search-form {
@@ -48,19 +38,14 @@ body {
   border-radius: 0 4px 4px 0;
   cursor: pointer;
 }
-.btn:hover {
-  background-color: rgb(87, 87, 87);
-}
-.btn--sm {
-  font-size: 0.9rem;
-  padding: 0.5em 1em;
-}
+.btn:hover { background-color: rgb(87, 87, 87); }
+.btn--sm { font-size: 0.9rem; padding: 0.5em 1em; }
 
 /* Main Container */
 .container {
   max-width: 900px;
   margin: 2em auto;
-  background: #fff;
+  background: #f8fafc;
   padding: 2em;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -68,7 +53,7 @@ body {
 
 /* Welcome Card */
 .welcome-card {
-  background: #fff;
+  background: #f3f4f6;
   padding: 2rem;
   border-radius: 6px;
   text-align: center;
@@ -78,7 +63,7 @@ body {
 
 /* Game Detail Card */
 .game-card {
-  background: #fff;
+  background: #f3f4f6;
   border-radius: 8px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
   overflow: hidden;
@@ -100,7 +85,6 @@ body {
   max-width: 100%;
   height: auto;
   object-fit: cover;
-  flex-shrink: 0;
   border-radius: 4px;
 }
 .game-card__info {
@@ -111,7 +95,7 @@ body {
   max-width: 800px;
 }
 .game-card__title {
-  margin: 0 0 0.5em;
+  margin: 0;
   font-size: 1.8em;
 }
 .game-card__appid {
@@ -120,34 +104,75 @@ body {
   margin-left: 0.5em;
 }
 
-/* Stats: horizontal list with label/value pairs */
-.game-card__stats {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 1em 2em;
-  list-style: none;
-  margin: 0;
-  padding: 1em;
-}
-.game-card__stats li {
+/* Meta row (developer / publisher / release date) */
+.game-card__meta {
   display: flex;
-  align-items: center;
-  gap: 1em;              
-  background: #f5f5f5;
-  border-radius: 4px;
-  padding: 0.75em 1em;
-}
-.stat-label {
-  font-size: 0.9em;
+  gap: 2rem;
+  justify-content: center;
+  margin: 0.5em 0 1.5em;
+  font-size: 0.9rem;
   color: #555;
 }
+.game-card__meta div {
+  white-space: nowrap;
+}
+
+.game-card__stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(180px, 1fr));
+  gap: 1rem;
+  list-style: none;
+  margin: 0;
+  padding: 1rem;
+}
+
+/* Online Players & Price cards */
+.game-card__stats li {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #e2e8f0;
+  border-radius: 4px;
+  padding: 1em;
+}
+.stat-label {
+  font-size: 0.9rem;
+  color: #555;
+  margin-bottom: 0.25em;
+  text-align: center;
+}
 .stat-value {
-  font-size: 1.2em;
+  font-size: 1.4rem;
   font-weight: bold;
   color: #222;
 }
-.btn--sm {
-  flex-shrink: 0;
+
+/* Reviews */
+.game-card__reviews {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1rem;
+  margin: 1.5rem 1rem 0;
+}
+.game-card__reviews .small-stat {
+  flex: 1 1 140px;
+  background: #e2e8f0;
+  border-radius: 4px;
+  padding: 0.75em 1em;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.game-card__reviews .stat-label {
+  font-size: 0.85rem;
+  color: #555;
+}
+.game-card__reviews .stat-value {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #222;
 }
 
 /* Description Section */
@@ -173,6 +198,35 @@ body {
   border-radius: 4px;
 }
 
+/* History Page Header */
+.history-header {
+  position: relative;
+  background: #222;
+  color: #fff;
+  padding: 1.5rem 2rem;
+  text-align: center;
+}
+.history-back {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  color: #fff;
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+.history-back:hover {
+  text-decoration: underline;
+}
+.history-header h1 {
+  margin: 0;
+  font-size: 1.8rem;
+}
+.history-header .tagline {
+  margin: 0.25rem 0 0;
+  font-size: 0.95rem;
+  color: #ccc;
+}
+
 /* Footer */
 .site-footer {
   text-align: center;
@@ -189,35 +243,17 @@ body {
   text-decoration: underline;
 }
 
-.history-header {
-  position: relative;
-  background: #222;
-  color: #fff;
-  padding: 1.5rem 2rem;
-  text-align: center;
+/* Responsive collapse */
+@media (max-width: 700px) {
+  .game-card__stats {
+    grid-template-columns: 1fr;
+  }
+  .game-card__meta {
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5em;
+  }
+  .game-card__reviews {
+    flex-direction: column;
+  }
 }
-
-.history-back {
-  position: absolute;
-  top: 1rem;
-  left: 1rem;
-  color: #fff;
-  text-decoration: none;
-  font-size: 0.9rem;
-}
-
-.history-back:hover {
-  text-decoration: underline;
-}
-
-.history-header h1 {
-  margin: 0;
-  font-size: 1.8rem;
-}
-
-.history-header .tagline {
-  margin: 0.25rem 0 0;
-  font-size: 0.95rem;
-  color: #ccc;
-}
-
