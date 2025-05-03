@@ -155,14 +155,19 @@
       // Update stats panel
       const statsEl = document.getElementById('stats');
       if (data.length) {
-        const counts = data.map(d=>d.count);
-        const min    = Math.min(...counts);
-        const max    = Math.max(...counts);
-        const avg    = (counts.reduce((a,b)=>a+b,0)/counts.length).toFixed(1);
-        statsEl.textContent = `Min: ${min} | Max: ${max} | Avg: ${avg}`;
+        const counts = data.map(d => d.count);
+        const lowest  = Math.min(...counts);
+        const highest = Math.max(...counts);
+        const average = (counts.reduce((a,b) => a + b, 0) / counts.length).toFixed(1);
+
+        statsEl.textContent = 
+          `Lowest Players: ${lowest}  |  Highest Players: ${highest}  |  Average Players: ${average}`;
       } else {
         statsEl.textContent = 'No data available';
       }
+
+      // center it
+      statsEl.style.textAlign = 'center';
     }
 
     // Event listeners
