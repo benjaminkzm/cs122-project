@@ -47,4 +47,6 @@ If this project continued in another course, I’d:
 
 - Let visitors save favorite games, see personalized dashboards.
 - Let users search from common Steam tags (Action, RPG, Indie, etc.) and discover top titles by live player count.
+- Improved web page design with more features and visualization on homepage.
+- Price tracker to allow users to estimate when a game would be on sale again based on trends or is currently on sale.
 
