@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>{{ game_name }} – Player Count History</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+  <script src="https://cdn.jsdelivr.net/npm/luxon@3/build/global/luxon.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1"></script>
+</head>
+<body>
+
+  <!-- Site Header -->
+  <header class="site-header" style="display:flex; align-items:center; padding:1rem 2rem; background:#222; color:#fff;">
+    <!-- left: Back link -->
+    <div style="flex:1; text-align:left;">
+      <a href="{{ url_for('search', query=appid) }}"
+     class="btn-small"
+     style="
+       position: absolute;
+       top: 1rem;
+       left: 1rem;
+       background: transparent;
+       color: #fff;
+       text-decoration: none;
+       font-size: 0.9em;
+     ">
+    ← Back to Game Data
+  </a>
+    </div>
+  
+    <!-- title + tagline -->
+    <div style="flex:1; text-align:center;">
+      <h1 style="margin:0; font-size:1.8rem;">{{ game_name }} History</h1>
+      <p class="tagline" style="margin:0.25rem 0 0; color:#ccc;">
+        Track how player counts have changed over time
+      </p>
+    </div>
+
+    <div style="flex:1; display:flex; justify-content:flex-end;">
+      <form action="/search" method="GET" class="search-form" autocomplete="off" style="display:flex; align-items:center;">
+        <input type="text" name="query"
+               placeholder="Enter AppID or Game Name"
+               required
+               class="searchbar"
+               style="padding:0.5rem; border-radius:4px 0 0 4px; border:none; width:200px;" />
+        <button type="submit" class="btn" style="padding:0.5rem 1rem; border-radius:0 4px 4px 0;">
+          Search
+        </button>
+      </form>
+    </div>
+  </header>  
+  
+  <div class="container" style="max-width: 900px; margin: 2em auto; background: #f9f9f9; border-radius: 8px; padding: 2em; box-shadow: 0 2px 6px rgba(0,0,0,0.1);">
+    <!-- Controls Panel -->
+    <section class="controls" style="display: flex; flex-wrap: wrap; gap: 2em; align-items: flex-end; margin-bottom: 1.5em;">
+      <div class="control-group" style="flex: 1; min-width: 180px;">
+        <label for="quickRange" style="font-weight: bold; display: block; margin-bottom: 0.5em;">Quick Range</label>
+        <select id="quickRange" class="select" style="width:100%; padding: 0.5em;">
+          <option value="1h">Last 1 Hour</option>
+          <option value="24h" selected>Last 24 Hours</option>
+          <option value="7d">Last 7 Days</option>
+        </select>
+      </div>
+      <div class="control-group" style="flex: 1; min-width: 180px;">
+        <label for="startDate" style="font-weight: bold; display: block; margin-bottom: 0.5em;">Start Date/Hour</label>
+        <div class="datetime-picker" style="display: flex; gap: 0.5em;">
+          <input type="date" id="startDate" class="input-date" style="flex: 2; padding: 0.5em;" />
+          <select id="startHour" class="select hour-select" style="flex: 1; padding: 0.5em;"></select>
+        </div>
+      </div>
+      <div class="control-group" style="flex: 1; min-width: 180px;">
+        <label for="endDate" style="font-weight: bold; display: block; margin-bottom: 0.5em;">End Date/Hour</label>
+        <div class="datetime-picker" style="display: flex; gap: 0.5em;">
+          <input type="date" id="endDate" class="input-date" style="flex: 2; padding: 0.5em;" />
+          <select id="endHour" class="select hour-select" style="flex: 1; padding: 0.5em;"></select>
+        </div>
+      </div>
+      <div style="display:flex; gap:1em; align-items:center;">
+        <button id="applyManual" class="btn" style="padding:0.75em 1.5em;">Apply</button>
+        <button id="exportCsv" class="btn" style="padding:0.75em 1.5em;">Export CSV</button>
+      </div>
+    </section>
+
+    <!-- Stats Display -->
+    <section id="stats" class="stats" style="margin-bottom: 2em; font-size: 1.1em; color: #333;"></section>
+
+    <!-- Chart Canvas -->
+    <section class="chart-container" style="background: #fff; padding: 1em; border-radius: 6px;">
+      <canvas id="historyChart"></canvas>
+    </section>
+  </div><!-- /.container -->
+
+  <footer class="site-footer" style="text-align:center; padding:1em 0; color:#777;">
+    <p>&copy; 2025 Steam Database · <a href="https://github.com/benjaminkzm/cs122-project" target="_blank" style="color:#555;">GitHub</a></p>
+  </footer>
+
+  <script>
+    /* eslint-disable */
+    const APPID = {{ appid }};
+    const NOW   = luxon.DateTime.now();
+    const ctx   = document.getElementById('historyChart').getContext('2d');
+
+    // Create Chart
+    const chart = new Chart(ctx, {
+      type: 'line',
+      data: { datasets: [{ label: '{{ game_name }}', data: [] }] },
+      options: {
+        parsing: { xAxisKey: 't', yAxisKey: 'y' },
+        plugins: { legend: { position: 'top' } },
+        scales: {
+          x: { type: 'time', time: { tooltipFormat: 'MMM d, HH:mm' }, title: { display:true, text:'Date/Time' } },
+          y: { beginAtZero:true, title:{ display:true, text:'Player Count' } }
+        }
+      }
+    });
+
+    // Populate hours
+    ['startHour','endHour'].forEach(id => {
+      const sel = document.getElementById(id);
+      for (let h=0; h<24; h++) {
+        const opt = document.createElement('option');
+        const hh  = String(h).padStart(2,'0');
+        opt.value = hh;
+        opt.text  = `${hh}:00`;
+        sel.appendChild(opt);
+      }
+    });
+
+    // Fetch & render
+    async function loadRange(range) {
+      let start, end = luxon.DateTime.now();
+      if (range) {
+        if (range==='1h') start = NOW.minus({hours:1});
+        else if (range==='7d') start = NOW.minus({days:7});
+        else start = NOW.minus({days:1});
+      } else {
+        const d1 = document.getElementById('startDate').value;
+        const h1 = document.getElementById('startHour').value;
+        const d2 = document.getElementById('endDate').value;
+        const h2 = document.getElementById('endHour').value;
+        start = luxon.DateTime.fromISO(`${d1}T${h1}:00`);
+        end   = luxon.DateTime.fromISO(`${d2}T${h2}:00`);
+      }
+      const sISO = encodeURIComponent(start.toISO());
+      const eISO = encodeURIComponent(end.toISO());
+      const res  = await fetch(`/api/history/${APPID}?start=${sISO}&end=${eISO}`);
+      const data = await res.json();
+
+      // Update chart
+      chart.data.datasets[0].data = data.map(d=>({t:d.timestamp,y:d.count}));
+      chart.update();
+
+      // Update stats panel
+      const statsEl = document.getElementById('stats');
+      if (data.length) {
+        const counts = data.map(d => d.count);
+        const lowest  = Math.min(...counts);
+        const highest = Math.max(...counts);
+        const average = (counts.reduce((a,b) => a + b, 0) / counts.length).toFixed(1);
+
+        statsEl.textContent = 
+          `Lowest Players: ${lowest}  |  Highest Players: ${highest}  |  Average Players: ${average}`;
+      } else {
+        statsEl.textContent = 'No data available';
+      }
+
+      // center it
+      statsEl.style.textAlign = 'center';
+    }
+
+    // Event listeners
+    document.getElementById('quickRange').addEventListener('change', e=>{
+      const r=e.target.value;
+      const start = r==='1h'?NOW.minus({hours:1}):r==='7d'?NOW.minus({days:7}):NOW.minus({days:1});
+      document.getElementById('startDate').value = start.toISODate();
+      document.getElementById('startHour').value = start.toFormat('HH');
+      document.getElementById('endDate').value   = NOW.toISODate();
+      document.getElementById('endHour').value   = NOW.toFormat('HH');
+      loadRange(r);
+    });
+    document.getElementById('applyManual').addEventListener('click', ()=>loadRange(null));
+
+    // exportCsv handler:
+    document.getElementById('exportCsv').addEventListener('click', () => {
+      // grab the same values you use in loadRange()
+      const sd = document.getElementById('startDate').value;
+      const sh = document.getElementById('startHour').value;
+      const ed = document.getElementById('endDate').value;
+      const eh = document.getElementById('endHour').value;
+
+      // build ISO strings just like your loadRange() does
+      const startISO = encodeURIComponent(`${sd}T${sh}:00`);
+      const endISO   = encodeURIComponent(`${ed}T${eh}:00`);
+
+      // navigate to your new export route
+      window.location.href = `/export/history/${APPID}?start=${startISO}&end=${endISO}`;
+    });
+
+    // Initialize
+    window.addEventListener('load', ()=>{
+      document.getElementById('quickRange').value='24h';
+      document.getElementById('quickRange').dispatchEvent(new Event('change'));
+      setInterval(()=>loadRange(document.getElementById('quickRange').value),300000);
+    });
+  </script>
+</body>
+</html>
